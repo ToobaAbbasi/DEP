@@ -1,0 +1,100 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+// WeatherVariable class to represent a weather parameter
+class WeatherVariable {
+public:
+    string name;
+    double value;
+
+    // Constructor to initialize name and value
+    WeatherVariable(const string& n, double v) : name(n), value(v) {}
+
+    // Method to display the weather variable
+    void display() const {
+        cout << "Name: " << name << ", Value: " << value << endl;
+    }
+};
+
+// WeatherVariableManager class to manage multiple weather variables
+class WeatherVariableManager {
+private:
+    vector<WeatherVariable> variables;
+
+public:
+    // Method to add a weather variable
+    void addVariable(const string& name, double value) {
+        variables.push_back(WeatherVariable(name, value));
+    }
+
+    // Method to remove a weather variable
+    void removeVariable(const string& name) {
+        for (auto it = variables.begin(); it != variables.end(); ++it) {
+            if (it->name == name) {
+                variables.erase(it);
+                return;
+            }
+        }
+        cout << "Variable not found" << endl;
+    }
+
+    // Method to list all weather variables
+    void listVariables() const {
+        for (const auto& var : variables) {
+            var.display();
+        }
+    }
+
+    // Method to get the value of a specific weather variable
+    double getVariableValue(const string& name) const {
+        for (const auto& var : variables) {
+            if (var.name == name) {
+                return var.value;
+            }
+        }
+        cout << "Variable not found" << endl;
+        return 0.0; // Default value if variable not found
+    }
+
+    // Method to update the value of a specific weather variable
+    void updateVariableValue(const string& name, double newValue) {
+        for (auto& var : variables) {
+            if (var.name == name) {
+                var.value = newValue;
+                return;
+            }
+        }
+        cout << "Variable not found" << endl;
+    }
+};
+
+int main() {
+    WeatherVariableManager manager;
+
+    // Add weather variables
+    manager.addVariable("Temperature", 25.5);
+    manager.addVariable("Wind Speed", 15.0);
+
+    // List weather variables
+    cout << "Weather Variables:" << endl;
+    manager.listVariables();
+
+    // Update a weather variable
+    manager.updateVariableValue("Temperature", 30.0);
+    cout << "Weather Variables after update:" << endl;
+    manager.listVariables();
+
+    // Remove a weather variable
+    manager.removeVariable("Wind Speed");
+    cout << "Weather Variables after removal:" << endl;
+    manager.listVariables();
+
+    // Get the value of a specific weather variable
+    double tempValue = manager.getVariableValue("Temperature");
+    cout << "Temperature value: " << tempValue << endl;
+
+    return 0;
+}
