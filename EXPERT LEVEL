@@ -1,0 +1,98 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+
+// Define a structure for the data to be saved
+struct SearchResult {
+    std::string category;
+    std::string parameter;
+    std::string result;
+
+    SearchResult(const std::string& cat, const std::string& param, const std::string& res)
+        : category(cat), parameter(param), result(res) {}
+};
+
+// Class to manage search results
+class SearchManager {
+private:
+    std::vector<SearchResult> results;
+    std::string offlineDataFile = "offline_data.txt";
+
+public:
+    // Save search result locally
+    void saveSearchResult(const std::string& category, const std::string& parameter, const std::string& result) {
+        results.emplace_back(category, parameter, result);
+        saveToLocalFile();
+    }
+
+    // Display all saved data
+    void displaySavedData() {
+        loadFromLocalFile();
+        std::cout << "Saved Search Results:\n";
+        for (const auto& result : results) {
+            std::cout << "Category: " << result.category << ", Parameter: " << result.parameter << ", Result: " << result.result << "\n";
+        }
+    }
+
+    // Display filtered data by category
+    void displayFilteredData(const std::string& category) {
+        loadFromLocalFile();
+        std::cout << "Filtered Results for Category '" << category << "':\n";
+        for (const auto& result : results) {
+            if (result.category == category) {
+                std::cout << "Parameter: " << result.parameter << ", Result: " << result.result << "\n";
+            }
+        }
+    }
+
+private:
+    // Save data to a local file
+    void saveToLocalFile() {
+        std::ofstream outFile(offlineDataFile);
+        if (outFile.is_open()) {
+            for (const auto& result : results) {
+                outFile << result.category << "," << result.parameter << "," << result.result << "\n";
+            }
+            outFile.close();
+        } else {
+            std::cerr << "Error: Unable to open file for writing.\n";
+        }
+    }
+
+    // Load data from a local file
+    void loadFromLocalFile() {
+        results.clear();
+        std::ifstream inFile(offlineDataFile);
+        if (inFile.is_open()) {
+            std::string line;
+            while (std::getline(inFile, line)) {
+                std::istringstream iss(line);
+                std::string category, parameter, result;
+                std::getline(iss, category, ',');
+                std::getline(iss, parameter, ',');
+                std::getline(iss, result, ',');
+                results.emplace_back(category, parameter, result);
+            }
+            inFile.close();
+        } else {
+            std::cerr << "Warning: No offline data found.\n";
+        }
+    }
+};
+
+int main() {
+    SearchManager manager;
+
+    // Simulate saving search results
+    manager.saveSearchResult("Weather", "Temperature", "25°C");
+    manager.saveSearchResult("Air Quality", "PM2.5", "25");
+
+    // Display all saved data
+    manager.displaySavedData();
+
+    // Display filtered data by category
+    manager.displayFilteredData("Weather");
+
+    return 0;
+}
