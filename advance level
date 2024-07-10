@@ -1,0 +1,128 @@
+#include <iostream>
+#include <string>
+#include <curl/curl.h>
+#include "json.hpp"
+
+// Use the nlohmann::json namespace for convenience
+using json = nlohmann::json;
+
+// Base class for handling API requests
+class APIClient {
+protected:
+    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+        ((std::string*)userp)->append((char*)contents, size * nmemb);
+        return size * nmemb;
+    }
+
+    std::string fetchData(const std::string& url) {
+        CURL* curl;
+        CURLcode res;
+        std::string readBuffer;
+
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+        curl = curl_easy_init();
+        if (curl) {
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+            res = curl_easy_perform(curl);
+            if (res != CURLE_OK) {
+                std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";
+            }
+            curl_easy_cleanup(curl);
+        }
+        curl_global_cleanup();
+        return readBuffer;
+    }
+};
+
+// Location class
+class Location {
+public:
+    std::string city;
+    std::string country;
+
+    Location(const std::string& city, const std::string& country) : city(city), country(country) {}
+};
+
+// WeatherVariable class
+class WeatherVariable {
+public:
+    double temperature;
+    double humidity;
+    std::string description;
+
+    WeatherVariable(double temp, double hum, const std::string& desc)
+        : temperature(temp), humidity(hum), description(desc) {}
+};
+
+// WeatherForecastingSystem class
+class WeatherForecastingSystem : public APIClient {
+private:
+    std::string apiKey;
+    std::string baseUrl = "http://api.openweathermap.org/data/2.5/weather";
+
+public:
+    WeatherForecastingSystem(const std::string& key) : apiKey(key) {}
+
+    WeatherVariable getWeather(const Location& location) {
+        std::string url = baseUrl + "?q=" + location.city + "," + location.country + "&appid=" + apiKey;
+        std::string response = fetchData(url);
+
+        // Parse the JSON response
+        json jsonResponse = json::parse(response);
+        double temperature = jsonResponse["main"]["temp"];
+        double humidity = jsonResponse["main"]["humidity"];
+        std::string description = jsonResponse["weather"][0]["description"];
+
+        return WeatherVariable(temperature, humidity, description);
+    }
+};
+
+// HistoricalWeatherSystem class
+class HistoricalWeatherSystem : public APIClient {
+    // Implementation similar to WeatherForecastingSystem but for historical data
+};
+
+// AirQualityForecastingSystem class
+class AirQualityForecastingSystem : public APIClient {
+private:
+    std::string apiKey;
+    std::string baseUrl = "http://api.openweathermap.org/data/2.5/air_pollution";
+
+public:
+    AirQualityForecastingSystem(const std::string& key) : apiKey(key) {}
+
+    json getAirQuality(const Location& location) {
+        // Assuming we have latitude and longitude for the location
+        // For simplicity, using static values for latitude and longitude
+        std::string url = baseUrl + "?lat=51.51&lon=-0.13&appid=" + apiKey;
+        std::string response = fetchData(url);
+
+        // Parse the JSON response
+        json jsonResponse = json::parse(response);
+        return jsonResponse;
+    }
+};
+
+// Main function to demonstrate the usage
+int main() {
+    std::string apiKey = "YOUR_API_KEY";  // Replace with your actual API key
+    Location location("London", "UK");
+
+    WeatherForecastingSystem weatherSystem(apiKey);
+    WeatherVariable weather = weatherSystem.getWeather(location);
+
+    std::cout << "Weather in " << location.city << ":\n";
+    std::cout << "Temperature: " << weather.temperature << "\n";
+    std::cout << "Humidity: " << weather.humidity << "\n";
+    std::cout << "Description: " << weather.description << "\n";
+
+    AirQualityForecastingSystem airQualitySystem(apiKey);
+    json airQuality = airQualitySystem.getAirQuality(location);
+
+    std::cout << "Air Quality in " << location.city << ":\n";
+    std::cout << airQuality.dump(4) << "\n";
+
+    return 0;
+}
