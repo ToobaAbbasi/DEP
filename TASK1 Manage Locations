@@ -1,0 +1,58 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+class Location 
+{
+private:
+
+public:
+    string name;
+    double latitude;
+    double longitude;
+
+    Location(string n, double lat, double lon) : name(n), latitude(lat), longitude(lon) {}
+};
+
+class LocationManager 
+{
+private:
+    vector<Location> locations;
+
+public:
+    void Add_Location(const string& name, double latitude, double longitude) 
+    {
+        locations.push_back(Location(name, latitude, longitude));
+    }
+
+    void Remove_Location(const string& name)
+    {
+        locations.erase(std::remove_if(locations.begin(), locations.end(),
+            [&name](Location& loc) { return loc.name == name; }), locations.end());
+    }
+
+    void listLocations() const 
+    {
+        for (const auto& loc : locations) {
+            cout << "Name: " << loc.name << ", Latitude: " << loc.latitude << ", Longitude: " << loc.longitude << std::endl;
+        }
+    }
+};
+
+int main() {
+    LocationManager manager;
+    manager.Add_Location("Islamabad", 52.100, -43.0060);
+    manager.Add_Location("Lahore", 22.714, -109.2437);
+
+    std::cout << "Locations:" << std::endl;
+    manager.listLocations();
+
+    manager.Remove_Location("New York");
+
+    std::cout << "Locations after removal:" << std::endl;
+    manager.listLocations();
+
+    return 0;
+}
