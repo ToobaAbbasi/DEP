@@ -1,0 +1,97 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+class Contact {
+public:
+    std::string name;
+    std::string phoneNumber;
+
+    Contact(std::string name, std::string phoneNumber) {
+        this->name = name;
+        this->phoneNumber = phoneNumber;
+    }
+};
+
+class ContactManager {
+private:
+    std::vector<Contact> contacts;
+
+public:
+    void addContact(std::string name, std::string phoneNumber) {
+        Contact newContact(name, phoneNumber);
+        contacts.push_back(newContact);
+        std::cout << "Contact added successfully." << std::endl;
+    }
+
+    void viewContacts() {
+        if (contacts.empty()) {
+            std::cout << "No contacts to display." << std::endl;
+        }
+        else {
+            for (size_t i = 0; i < contacts.size(); ++i) {
+                std::cout << "Contact " << i + 1 << ": " << std::endl;
+                std::cout << "Name: " << contacts[i].name << std::endl;
+                std::cout << "Phone Number: " << contacts[i].phoneNumber << std::endl;
+            }
+        }
+    }
+
+    void deleteContact(std::string name) {
+        bool found = false;
+        for (auto it = contacts.begin(); it != contacts.end(); ++it) {
+            if (it->name == name) {
+                contacts.erase(it);
+                std::cout << "Contact deleted successfully." << std::endl;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            std::cout << "Contact not found." << std::endl;
+        }
+    }
+};
+
+void showMenu() {
+    std::cout << "Contact Management System By Tooba Abbasi" << std::endl;
+    std::cout << "1. Add Contact" << std::endl;
+    std::cout << "2. View Contacts" << std::endl;
+    std::cout << "3. Delete Contact" << std::endl;
+    std::cout << "4. Exit" << std::endl;
+}
+
+int main() {
+    ContactManager cm;
+    int choice;
+    std::string name, phoneNumber;
+
+    while (true) {
+        showMenu();
+        std::cout << "Choose your desired option: ";
+        std::cin >> choice;
+
+        switch (choice) {
+        case 1:
+            std::cout << "Enter name: ";
+            std::cin >> name;
+            std::cout << "Enter phone number: ";
+            std::cin >> phoneNumber;
+            cm.addContact(name, phoneNumber);
+            break;
+        case 2:
+            cm.viewContacts();
+            break;
+        case 3:
+            std::cout << "Enter name of contact to delete: ";
+            std::cin >> name;
+            cm.deleteContact(name);
+            break;
+        case 4:
+            std::cout << "Exiting Contact Management system" << std::endl;
+            return 0;
+        default:
+            std::cout << "Invalid choice. Please try again." << std::endl;
+        }
+    }
+}
