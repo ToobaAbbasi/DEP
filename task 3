@@ -1,0 +1,72 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
+// Function to compress a file using Run-Length Encoding
+void compressFile(const std::string &inputFileName, const std::string &outputFileName) {
+    std::ifstream inputFile(inputFileName, std::ios::binary);
+    std::ofstream outputFile(outputFileName, std::ios::binary);
+
+    if (!inputFile || !outputFile) {
+        std::cerr << "Error opening files!" << std::endl;
+        return;
+    }
+
+    char currentChar;
+    char previousChar = '\0';
+    int count = 0;
+
+    while (inputFile.get(currentChar)) {
+        if (currentChar == previousChar) {
+            count++;
+        } else {
+            if (count > 0) {
+                outputFile << count << previousChar;
+            }
+            previousChar = currentChar;
+            count = 1;
+        }
+    }
+
+    if (count > 0) {
+        outputFile << count << previousChar;
+    }
+
+    inputFile.close();
+    outputFile.close();
+}
+
+// Function to decompress a file compressed using Run-Length Encoding
+void decompressFile(const std::string &inputFileName, const std::string &outputFileName) {
+    std::ifstream inputFile(inputFileName, std::ios::binary);
+    std::ofstream outputFile(outputFileName, std::ios::binary);
+
+    if (!inputFile || !outputFile) {
+        std::cerr << "Error opening files!" << std::endl;
+        return;
+    }
+
+    int count;
+    char currentChar;
+
+    while (inputFile >> count >> currentChar) {
+        for (int i = 0; i < count; ++i) {
+            outputFile.put(currentChar);
+        }
+    }
+
+    inputFile.close();
+    outputFile.close();
+}
+
+int main() {
+    std::string inputFileName = "input.txt";
+    std::string compressedFileName = "compressed.rle";
+    std::string decompressedFileName = "decompressed.txt";
+
+    compressFile(inputFileName, compressedFileName);
+    decompressFile(compressedFileName, decompressedFileName);
+
+    std::cout << "Compression and decompression completed." << std::endl;
+    return 0;
+}
