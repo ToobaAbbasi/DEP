@@ -1,0 +1,96 @@
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <filesystem>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+namespace fs = std::filesystem;
+
+const int PORT = 8080;
+const std::string DIRECTORY = "./www";
+
+void handle_client(int client_socket) {
+    char buffer[1024] = { 0 };
+    read(client_socket, buffer, 1024);
+
+    std::istringstream request(buffer);
+    std::string method, path, version;
+    request >> method >> path >> version;
+
+    if (method != "GET") {
+        std::string response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
+        send(client_socket, response.c_str(), response.size(), 0);
+    }
+    else {
+        if (path == "/") {
+            path = "/index.html";
+        }
+        std::string full_path = DIRECTORY + path;
+
+        if (fs::exists(full_path)) {
+            std::ifstream file(full_path);
+            std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+            std::string response = "HTTP/1.1 200 OK\r\nContent-Length: " + std::to_string(content.size()) + "\r\n\r\n" + content;
+            send(client_socket, response.c_str(), response.size(), 0);
+        }
+        else {
+            std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
+            send(client_socket, response.c_str(), response.size(), 0);
+        }
+    }
+
+    close(client_socket);
+}
+
+int main() {
+    int server_fd, client_socket;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 10) < 0) {
+        perror("listen failed");
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Server is listening on port " << PORT << std::endl;
+
+    std::vector<std::thread> threads;
+
+    while (true) {
+        if ((client_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
+            perror("accept failed");
+            exit(EXIT_FAILURE);
+        }
+
+        threads.push_back(std::thread(handle_client, client_socket));
+    }
+
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+
+    close(server_fd);
+    return 0;
+}
